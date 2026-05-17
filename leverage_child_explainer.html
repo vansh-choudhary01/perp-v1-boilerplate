@@ -1,0 +1,220 @@
+
+<style>
+* { box-sizing: border-box; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+.scenario-nav { display: flex; gap: 8px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.snav-btn { padding: 6px 14px; border-radius: 20px; border: 0.5px solid var(--color-border-secondary); background: transparent; color: var(--color-text-secondary); font-size: 13px; cursor: pointer; transition: all .2s; }
+.snav-btn.active { background: var(--color-background-info); color: var(--color-text-info); border-color: var(--color-border-info); font-weight: 500; }
+.scene-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
+.story-box { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 14px 16px; font-size: 14px; color: var(--color-text-primary); line-height: 1.7; margin-bottom: 1rem; }
+.story-box b { font-weight: 500; }
+.bar-wrap { margin: 1rem 0; }
+.bar-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 4px; }
+.bar-track { background: var(--color-background-secondary); border-radius: 6px; height: 28px; overflow: hidden; width: 100%; position: relative; }
+.bar-fill { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 10px; font-size: 12px; font-weight: 500; transition: width 0.6s ease; }
+.bar-you { background: #B5D4F4; color: #0C447C; }
+.bar-broker { background: #9FE1CB; color: #085041; }
+.bar-pos { background: #AFA9EC; color: #3C3489; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; margin-bottom: 1rem; }
+.stat { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 10px 12px; }
+.stat-label { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; }
+.stat-val { font-size: 16px; font-weight: 500; color: var(--color-text-primary); }
+.stat-val.green { color: var(--color-text-success); }
+.stat-val.red { color: var(--color-text-danger); }
+.outcome-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 1rem; }
+.outcome { border-radius: var(--border-radius-md); padding: 12px 14px; }
+.outcome.win { background: var(--color-background-success); }
+.outcome.lose { background: var(--color-background-danger); }
+.outcome-title { font-size: 12px; font-weight: 500; margin-bottom: 4px; }
+.outcome.win .outcome-title { color: var(--color-text-success); }
+.outcome.lose .outcome-title { color: var(--color-text-danger); }
+.outcome-detail { font-size: 13px; color: var(--color-text-primary); line-height: 1.5; }
+.lev-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; background: var(--color-background-warning); color: var(--color-text-warning); margin-bottom: 12px; }
+.slider-row { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
+.slider-row label { font-size: 13px; color: var(--color-text-secondary); min-width: 80px; }
+.slider-row input { flex: 1; }
+.slider-row span { font-size: 13px; font-weight: 500; color: var(--color-text-primary); min-width: 50px; text-align: right; }
+.liq-warning { background: var(--color-background-danger); border-radius: var(--border-radius-md); padding: 10px 14px; font-size: 13px; color: var(--color-text-danger); margin-top: 8px; display: none; }
+.liq-warning.show { display: block; }
+</style>
+
+<h2 class="sr-only">Interactive leverage explainer with three scenarios: no leverage, 5x leverage, and 10x leverage, showing profit and loss outcomes</h2>
+
+<div class="scenario-nav">
+  <button class="snav-btn active" onclick="setScene(0)">No leverage (1x)</button>
+  <button class="snav-btn" onclick="setScene(1)">5x leverage</button>
+  <button class="snav-btn" onclick="setScene(2)">10x leverage</button>
+  <button class="snav-btn" onclick="setScene(3)">Play yourself</button>
+</div>
+
+<div id="scene-0" class="scene-card">
+  <div class="lev-badge">1x — no leverage</div>
+  <div class="story-box">
+    You have <b>₹1,000</b> saved up. You buy a toy car worth exactly <b>₹1,000</b> — your own money, no borrowing. If the toy's price goes up, you win. If it goes down, you lose a bit. But you can never lose more than your ₹1,000.
+  </div>
+  <div class="bar-wrap">
+    <div class="bar-label">Your money (₹1,000)</div>
+    <div class="bar-track"><div class="bar-fill bar-you" style="width:100%">₹1,000 — your money</div></div>
+  </div>
+  <div class="bar-wrap">
+    <div class="bar-label">Total position size</div>
+    <div class="bar-track"><div class="bar-fill bar-pos" style="width:100%">₹1,000 position</div></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Your money</div><div class="stat-val">₹1,000</div></div>
+    <div class="stat"><div class="stat-label">Borrowed</div><div class="stat-val">₹0</div></div>
+    <div class="stat"><div class="stat-label">Position size</div><div class="stat-val">₹1,000</div></div>
+  </div>
+  <div class="outcome-row">
+    <div class="outcome win">
+      <div class="outcome-title">Price goes up 10%</div>
+      <div class="outcome-detail">Toy worth ₹1,100<br>You made <b>₹100 profit</b><br>That's 10% gain</div>
+    </div>
+    <div class="outcome lose">
+      <div class="outcome-title">Price drops 10%</div>
+      <div class="outcome-detail">Toy worth ₹900<br>You lost <b>₹100</b><br>That's 10% loss</div>
+    </div>
+  </div>
+</div>
+
+<div id="scene-1" class="scene-card" style="display:none">
+  <div class="lev-badge">5x leverage</div>
+  <div class="story-box">
+    You have <b>₹1,000</b> but the broker lends you <b>₹4,000 more</b>. Now you control a <b>₹5,000</b> toy car. A small price move feels 5x bigger to you — because your ₹1,000 is riding on a ₹5,000 thing!
+  </div>
+  <div class="bar-wrap">
+    <div class="bar-label">Your money (₹1,000) vs broker's money (₹4,000)</div>
+    <div class="bar-track">
+      <div class="bar-fill bar-you" style="width:20%;border-radius:6px 0 0 6px">You ₹1k</div>
+      <div class="bar-fill bar-broker" style="width:80%;border-radius:0 6px 6px 0;position:absolute;left:20%;top:0">Broker lends ₹4,000</div>
+    </div>
+  </div>
+  <div class="bar-wrap">
+    <div class="bar-label">Total position size</div>
+    <div class="bar-track"><div class="bar-fill bar-pos" style="width:100%">₹5,000 position (5x your money)</div></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Your money</div><div class="stat-val">₹1,000</div></div>
+    <div class="stat"><div class="stat-label">Borrowed</div><div class="stat-val">₹4,000</div></div>
+    <div class="stat"><div class="stat-label">Position size</div><div class="stat-val">₹5,000</div></div>
+  </div>
+  <div class="outcome-row">
+    <div class="outcome win">
+      <div class="outcome-title">Price goes up 10%</div>
+      <div class="outcome-detail">₹5,000 x 10% = ₹500 profit<br>On your ₹1,000 that's<br><b>50% gain!</b></div>
+    </div>
+    <div class="outcome lose">
+      <div class="outcome-title">Price drops 10%</div>
+      <div class="outcome-detail">₹5,000 x 10% = ₹500 loss<br>On your ₹1,000 that's<br><b>50% wiped out!</b></div>
+    </div>
+  </div>
+</div>
+
+<div id="scene-2" class="scene-card" style="display:none">
+  <div class="lev-badge">10x leverage — danger zone</div>
+  <div class="story-box">
+    You have <b>₹1,000</b> and the broker lends you <b>₹9,000</b>. You're controlling a <b>₹10,000</b> position. Now a tiny 10% drop in price completely wipes out all your ₹1,000. This is called <b>liquidation</b> — the broker forcibly closes your trade before you lose their money too.
+  </div>
+  <div class="bar-wrap">
+    <div class="bar-label">Your money (₹1,000) vs broker's money (₹9,000)</div>
+    <div class="bar-track">
+      <div class="bar-fill bar-you" style="width:10%;border-radius:6px 0 0 6px;font-size:11px">You</div>
+      <div class="bar-fill bar-broker" style="width:90%;border-radius:0 6px 6px 0;position:absolute;left:10%;top:0">Broker lends ₹9,000</div>
+    </div>
+  </div>
+  <div class="bar-wrap">
+    <div class="bar-label">Total position size</div>
+    <div class="bar-track"><div class="bar-fill bar-pos" style="width:100%">₹10,000 position (10x your money)</div></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Your money</div><div class="stat-val">₹1,000</div></div>
+    <div class="stat"><div class="stat-label">Borrowed</div><div class="stat-val">₹9,000</div></div>
+    <div class="stat"><div class="stat-label">Liquidated at</div><div class="stat-val red">-10% move</div></div>
+  </div>
+  <div class="outcome-row">
+    <div class="outcome win">
+      <div class="outcome-title">Price goes up 10%</div>
+      <div class="outcome-detail">₹10,000 x 10% = ₹1,000<br>You <b>doubled</b> your money<br>100% gain on ₹1,000!</div>
+    </div>
+    <div class="outcome lose">
+      <div class="outcome-title">Price drops 10%</div>
+      <div class="outcome-detail">₹10,000 x 10% = ₹1,000 loss<br>Your entire ₹1,000 is gone<br><b>Liquidated. Zero left.</b></div>
+    </div>
+  </div>
+</div>
+
+<div id="scene-3" class="scene-card" style="display:none">
+  <div class="lev-badge">Try it yourself</div>
+  <div class="slider-row">
+    <label>Your money</label>
+    <input type="range" id="sl-capital" min="100" max="10000" step="100" value="1000" oninput="calcLev()">
+    <span id="lbl-capital">₹1,000</span>
+  </div>
+  <div class="slider-row">
+    <label>Leverage</label>
+    <input type="range" id="sl-lev" min="1" max="20" step="1" value="5" oninput="calcLev()">
+    <span id="lbl-lev">5x</span>
+  </div>
+  <div class="slider-row">
+    <label>Price move</label>
+    <input type="range" id="sl-move" min="-50" max="50" step="1" value="10" oninput="calcLev()">
+    <span id="lbl-move">+10%</span>
+  </div>
+  <div class="stats" style="margin-top:1rem">
+    <div class="stat"><div class="stat-label">Position size</div><div class="stat-val" id="res-pos">₹5,000</div></div>
+    <div class="stat"><div class="stat-label">Profit / Loss</div><div class="stat-val" id="res-pnl">+₹500</div></div>
+    <div class="stat"><div class="stat-label">Return on your money</div><div class="stat-val" id="res-ret">+50%</div></div>
+  </div>
+  <div id="liq-warn" class="liq-warning">
+    Liquidated! A drop of <span id="liq-pct"></span>% wipes out your entire deposit at <span id="liq-lev"></span>x leverage.
+  </div>
+  <div class="bar-wrap" style="margin-top:1rem">
+    <div class="bar-label">Your money vs borrowed</div>
+    <div class="bar-track" style="position:relative">
+      <div class="bar-fill bar-you" id="bar-you-dyn" style="width:20%">You</div>
+      <div class="bar-fill bar-broker" id="bar-bro-dyn" style="width:80%;position:absolute;left:20%;top:0">Broker</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function setScene(i) {
+  [0,1,2,3].forEach(j => {
+    document.getElementById('scene-'+j).style.display = j===i ? '' : 'none';
+  });
+  document.querySelectorAll('.snav-btn').forEach((b,j) => b.classList.toggle('active', j===i));
+  if (i===3) calcLev();
+}
+function calcLev() {
+  const capital = parseInt(document.getElementById('sl-capital').value);
+  const lev = parseInt(document.getElementById('sl-lev').value);
+  const move = parseInt(document.getElementById('sl-move').value);
+  document.getElementById('lbl-capital').textContent = '₹'+capital.toLocaleString('en-IN');
+  document.getElementById('lbl-lev').textContent = lev+'x';
+  document.getElementById('lbl-move').textContent = (move>=0?'+':'')+move+'%';
+  const pos = capital * lev;
+  const pnl = pos * move / 100;
+  const ret = (pnl / capital) * 100;
+  document.getElementById('res-pos').textContent = '₹'+Math.round(pos).toLocaleString('en-IN');
+  const pnlEl = document.getElementById('res-pnl');
+  pnlEl.textContent = (pnl>=0?'+':'')+' ₹'+Math.abs(Math.round(pnl)).toLocaleString('en-IN');
+  pnlEl.className = 'stat-val ' + (pnl>=0?'green':'red');
+  const retEl = document.getElementById('res-ret');
+  retEl.textContent = (ret>=0?'+':'')+Math.round(ret)+'%';
+  retEl.className = 'stat-val ' + (ret>=0?'green':'red');
+  const liqPct = Math.round(100/lev);
+  const warn = document.getElementById('liq-warn');
+  if (move <= -liqPct) {
+    warn.classList.add('show');
+    document.getElementById('liq-pct').textContent = liqPct;
+    document.getElementById('liq-lev').textContent = lev;
+  } else {
+    warn.classList.remove('show');
+  }
+  const youPct = Math.round(100/lev);
+  const broPct = 100 - youPct;
+  document.getElementById('bar-you-dyn').style.width = youPct+'%';
+  document.getElementById('bar-bro-dyn').style.width = broPct+'%';
+  document.getElementById('bar-bro-dyn').style.left = youPct+'%';
+}
+</script>
