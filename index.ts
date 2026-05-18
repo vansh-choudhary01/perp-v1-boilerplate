@@ -1,6 +1,8 @@
 import express from "express";
 import dotenv from "dotenv";
-import { signIn, signUp } from "./controllers/apicontroller";
+import { signIn, signUp } from "./controllers/auth";
+import { AVLTree } from "avl";
+import { AVLTreeInit } from "./algos/avl";
 dotenv.config();
 
 const app = express();
@@ -44,7 +46,7 @@ export const users: User[] = [
     // }
 ];
 
-type User = {
+export type User = {
     userId: string,
     username: string,
     password: string,
@@ -91,26 +93,54 @@ type User = {
     }[]
 };
 
-type Bid = {
+export type RestingOrder = { userId: number, qty: number, filledQty: number, orderId: string, createdAt: Date }
+
+export type Bid = {
     availableQty: number,
-    openOrders: { userId: number, qty: number, filledQty: number, orderId: number, createdAt: Date }[]
+    openOrders: RestingOrder[]
 }
 
-type Orderbook = {
-    bids: Record<string, Bid>,
-    asks: Record<string, Bid>,
+export interface Fill {
+  fillId: string;
+  market: string;
+  price: number;
+  qty: number;
+  buyOrderId: string;
+  sellOrderId: string;
+  createdAt: Date;
+}
+
+export type Order = {
+    userId: number,
+    orderId: string,
+    market: string,
+    type: "LONG"| "SORT",
+    qty: number,
+    filledQty: number,
+    totalPrice: number,
+    averagePrice: number,
+    margin: number,
+    orderType: "limit"| "market",
+    price: number | null,
+    status: "open"| "partially_filled"| "filled"| "cancelled"
+    fills: Fill[],
+}
+
+export type Orderbook = {
+    bids: AVLTree<number, Bid>,
+    asks: AVLTree<number, Bid>,
     lastTradedPrice: number,
     indexPrice: number
 }
 
 type Orderbooks = Record<string, Orderbook>
 
-const orderbooks: Orderbooks = {
-    SOL: { bids: {}, asks: {}, lastTradedPrice: 90, indexPrice: 90.01 },
-    ETH: { bids: {}, asks: {}, lastTradedPrice: 1900, indexPrice: 1899.9 }
+export const orderbooks: Orderbooks = {
+    SOL: { bids: AVLTreeInit.create("new"), asks: AVLTreeInit.create("new"), lastTradedPrice: 90, indexPrice: 90.01 },
+    ETH: { bids: AVLTreeInit.create("new"), asks: AVLTreeInit.create("new"), lastTradedPrice: 1900, indexPrice: 1899.9 }
 }
 
-const fills = [{
+export const fills = [{
     maker: 1,
     taker: 2,
     market: "SOL",
@@ -140,11 +170,11 @@ app.get("/orders/open/:marketId", (req, res) => { })
 app.get("/orders/:marketId", (req, res) => { })
 app.get("/fills", (req, res) => { });
 
-async function liqudationChecks(asset: string, price: number) {
+export async function liqudationChecks(asset: string, price: number) {
 
 }
 
 
-async function onPriceUpdateFromBinance(asset: string, price: number) {
+export async function onPriceUpdateFromBinance(asset: string, price: number) {
     liqudationChecks(asset, price);
 }
