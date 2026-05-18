@@ -1,5 +1,5 @@
 import {AVLTree} from 'avl';
-import type { Bid } from '..';
+import type { Bid } from '../store/exchange-store';
 // const tree = new AVLTree();
 
 type treeObj = AVLTree<number, Bid> | null;
@@ -8,7 +8,7 @@ const algo: Comparator = (a, b) => a - b;
 
 export class AVLTreeInit {
     static initialTree: treeObj = null;
-    static create(type: string) {
+    static create(type: string): AVLTree<number, Bid> {
         if (type === 'new') {
             return new AVLTree<number, Bid>(algo);
         }

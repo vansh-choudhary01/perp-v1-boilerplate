@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import { signIn, signUp } from "./controllers/auth";
 import { AVLTree } from "avl";
 import { AVLTreeInit } from "./algos/avl";
+import type { User } from "./store/exchange-store";
 dotenv.config();
 
 const app = express();
@@ -45,100 +46,6 @@ export const users: User[] = [
     //     ]
     // }
 ];
-
-export type User = {
-    userId: string,
-    username: string,
-    password: string,
-    collateral: {
-        available: number,
-        locked: number
-    },
-    positions: {
-        market: {
-            type: string,
-            enum: ["SOL", "ETH"]
-        },
-        type: {
-            type: string,
-            enum: ["LONG", "SORT"]
-        },
-        qty: number,
-        margin: number,
-        liquidationPrice: number,
-        pnL: number,
-        averagePrice: number
-    }[],
-    orders: {
-        orderId: string,
-        market: {
-            type: string,
-            enum: ["SOL", "ETH"]
-        },
-        type: {
-            type: string,
-            enum: ["LONG", "SORT"]
-        },
-        qty: number,
-        margin: number,
-        orderType: {
-            type: string,
-            enum: ["market", "limit"]
-        }
-        price: number,
-        status: {
-            type: string,
-            enum: ["open", "filled", "partial_filled", "cancelled"]
-        }
-    }[]
-};
-
-export type RestingOrder = { userId: number, qty: number, filledQty: number, orderId: string, createdAt: Date }
-
-export type Bid = {
-    availableQty: number,
-    openOrders: RestingOrder[]
-}
-
-export interface Fill {
-  fillId: string;
-  market: string;
-  price: number;
-  qty: number;
-  buyOrderId: string;
-  sellOrderId: string;
-  createdAt: Date;
-}
-
-export type Order = {
-    userId: number,
-    orderId: string,
-    market: string,
-    type: "LONG"| "SORT",
-    qty: number,
-    filledQty: number,
-    totalPrice: number,
-    averagePrice: number,
-    margin: number,
-    orderType: "limit"| "market",
-    price: number | null,
-    status: "open"| "partially_filled"| "filled"| "cancelled"
-    fills: Fill[],
-}
-
-export type Orderbook = {
-    bids: AVLTree<number, Bid>,
-    asks: AVLTree<number, Bid>,
-    lastTradedPrice: number,
-    indexPrice: number
-}
-
-type Orderbooks = Record<string, Orderbook>
-
-export const orderbooks: Orderbooks = {
-    SOL: { bids: AVLTreeInit.create("new"), asks: AVLTreeInit.create("new"), lastTradedPrice: 90, indexPrice: 90.01 },
-    ETH: { bids: AVLTreeInit.create("new"), asks: AVLTreeInit.create("new"), lastTradedPrice: 1900, indexPrice: 1899.9 }
-}
 
 export const fills = [{
     maker: 1,
