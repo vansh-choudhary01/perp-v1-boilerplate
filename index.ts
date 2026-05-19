@@ -1,9 +1,12 @@
-import express from "express";
+import express, { type NextFunction } from "express";
+import { type Request, type Response } from "express";
 import dotenv from "dotenv";
 import { signIn, signUp } from "./controllers/auth";
 import { AVLTree } from "avl";
 import { AVLTreeInit } from "./algos/avl";
 import type { User } from "./store/exchange-store";
+import { createOrderController } from "./controllers/order";
+import jwt from "jsonwebtoken";
 dotenv.config();
 
 const app = express();
@@ -65,10 +68,38 @@ export const fills = [{
     short: 1
 }];
 
-app.post("/signup", (req, res) => signUp)
-app.post("/signin", (req, res) => signIn)
+app.get("/", (req, res) => res.json("Server is healthy"))
+
+export interface TokenPayload {
+  userId: string;
+}
+
+export function requireAuth(req: Request, res: Response, next: NextFunction): void {
+  const authHeader = req.headers.authorization;
+  const token =
+    typeof authHeader === "string" && authHeader.startsWith("Bearer ")
+      ? authHeader.slice(7)
+      : undefined;
+
+  if (!token) {
+    res.status(401).json({ error: "Missing auth token" });
+    return;
+  }
+
+  try {
+    const payload = jwt.verify(token, process.env.JWTSECRET!) as TokenPayload;
+    console.log(payload);
+    req.userId = payload.userId;
+    next();
+  } catch {
+    res.status(401).json({ error: "Invalid auth token" });
+  }
+}
+
+app.post("/signup", signUp)
+app.post("/signin", signIn)
 app.post("/onramp", (req, res) => { })
-app.post("/order", (req, res) => { })
+app.post("/order", requireAuth, createOrderController)
 app.delete("/order", (req, res) => { })
 app.get("/equity/available", (req, res) => { })
 app.get("/positions/open/:marketId", (req, res) => { });
@@ -85,3 +116,7 @@ export async function liqudationChecks(asset: string, price: number) {
 export async function onPriceUpdateFromBinance(asset: string, price: number) {
     liqudationChecks(asset, price);
 }
+
+app.listen(3000, () => {
+    console.log("Server is running on 3000");
+});

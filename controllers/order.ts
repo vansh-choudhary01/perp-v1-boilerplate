@@ -630,36 +630,37 @@ export function createOrderController(req: Request, res: Response) {
     try {
         const userId = getUserId(req);
 
-    const parsedBody = orderBodySchema.safeParse(req.body);
-    if (!parsedBody.success) {
-        return res.status(409).json({
-            status: false,
-            message: parsedBody.error
-        })
-    }
+        const parsedBody = orderBodySchema.safeParse(req.body);
+        if (!parsedBody.success) {
+            return res.status(409).json({
+                status: false,
+                message: parsedBody.error
+            })
+        }
 
-    const { type, side, symbol, qty } = parsedBody.data;
-    const price = type === "market" ? null : parsedBody.data.price;
+        const { type, side, symbol, qty } = parsedBody.data;
+        const price = type === "market" ? null : parsedBody.data.price;
 
-    const order = createOrder({
-        userId,
-        type,
-        side,
-        symbol,
-        price: type === "market" ? null : price,
-        qty,
-    });
+        const order = createOrder({
+            userId,
+            type,
+            side,
+            symbol,
+            price: type === "market" ? null : price,
+            qty,
+        });
 
-    res.status(200).json({
-        status: true,
-        data: order,
-        message: "order created successful"
-    });
+        res.status(200).json({
+            status: true,
+            data: order,
+            message: "order created successful"
+        });
     } catch (err) {
+        console.log(err);
         return res.status(500).json({
             status: false,
             message: err
         })
     }
-    
+
 }

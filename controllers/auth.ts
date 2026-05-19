@@ -17,8 +17,9 @@ export async function signUp(req: Request, res: Response) {
             })
         } else {
             const hashedToken = await bcrypt.hash(password, 10);
+            const userId = crypto.randomUUID();
             users.push({
-                userId: crypto.randomUUID(),
+                userId,
                 username,
                 password: hashedToken,
                 collateral: {
@@ -29,7 +30,7 @@ export async function signUp(req: Request, res: Response) {
                 orders: [],
             })
             const token = jwt.sign(
-                { username },
+                { userId },
                 process.env.JWTSECRET as string, {
                 expiresIn: "7D",
             });
@@ -66,7 +67,7 @@ export async function signIn(req: Request, res: Response) {
 
         if (await bcrypt.compare(password, user.password)) {
             const token = jwt.sign(
-                { username },
+                { userId: user.userId },
                 process.env.JWTSECRET as string,
                 { expiresIn: "7D"}
             );
