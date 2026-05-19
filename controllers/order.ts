@@ -3,55 +3,55 @@ import { AVLTree } from "avl";
 import type { Request, Response } from "express";
 import { AVLTreeInit } from "../algos/avl";
 // import { MaxHeap, MinHeap } from "../algos/heap.js";
-import { BALANCES, FILLS, ORDERBOOKS, ORDERS, type Bid, type Fill, type OrderRecord, type OrderStatus, type OrderType, type RestingOrder, type Side } from "../store/exchange-store.js";
+import { BALANCES, FILLS, INDEXPRICES, ORDERBOOKS, ORDERS, type Bid, type Fill, type OrderRecord, type OrderStatus, type OrderType, type Position, type RestingOrder, type Side } from "../store/exchange-store.js";
 import { orderBodySchema } from "../types/exchange-schema.js";
 
-// function resetBalance(userId: string) {
-//     const user = users.find((user) => userId === userId);
+function resetBalance(userId: string) {
+    const user = users.find((user) => userId === userId);
 
-//     if (user) {
-//         user.collateral = {
-//             available: 10000,
-//             locked: 0
-//         }
-//     }
-// }
+    if (user) {
+        user.collateral = {
+            available: 10000,
+            locked: 0
+        }
+    }
+}
 
-// type fillRequiredFields = {
-//     price: number,
-//     qty: number,
-//     buyOrderId: string,
-//     sellOrderId: string,
-// }
+type fillRequiredFields = {
+    price: number,
+    qty: number,
+    buyOrderId: string,
+    sellOrderId: string,
+}
 
-// function getFillObject(order: OrderRecord, { price, qty, buyOrderId, sellOrderId }: fillRequiredFields): Fill {
-//     return {
-//         fillId: crypto.randomUUID(),
-//         market: order.market,
-//         price,
-//         qty,
-//         buyOrderId,
-//         sellOrderId,
-//         createdAt: new Date(),
-//     }
-// }
+function getFillObject(order: OrderRecord, { price, qty, buyOrderId, sellOrderId }: fillRequiredFields): Fill {
+    return {
+        fillId: crypto.randomUUID(),
+        symbol: order.symbol,
+        price,
+        qty,
+        buyOrderId,
+        sellOrderId,
+        createdAt: Date.now(),
+    }
+}
 
-// function getRestingOrder(order: OrderRecord): RestingOrder {
-//     return {
-//         userId: order.userId,
-//         qty: order.qty,
-//         filledQty: order.filledQty,
-//         orderId: order.orderId,
-//         createdAt: new Date(),
-//     }
-// }
+function getRestingOrder(order: OrderRecord): RestingOrder {
+    return {
+        userId: order.userId,
+        qty: order.qty,
+        filledQty: order.filledQty,
+        orderId: order.orderId,
+        createdAt: Date.now(),
+    }
+}
 
-// function getBid(order: OrderRecord): Bid {
-//     return {
-//         availableQty: order.qty - order.filledQty,
-//         openOrders: [getRestingOrder(order)]
-//     }
-// }
+function getBid(order: OrderRecord): Bid {
+    return {
+        availableQty: order.qty - order.filledQty,
+        openOrders: [getRestingOrder(order)]
+    }
+}
 
 // export function createOrder(req: Request, res: Response) {
 //     const { userId } = req;
@@ -171,6 +171,7 @@ export function createOrder(message: Record<string, unknown>) {
         symbol: String(message.symbol),
         price: Number(message.price),
         qty: Number(message.qty),
+        margin: Number(message.margin),
         filledQty: 0,
         totalPrice: 0,
         averagePrice: null,
@@ -178,6 +179,24 @@ export function createOrder(message: Record<string, unknown>) {
         fills: [],
         createdAt: Date.now()
     };
+
+    type Indexprice = keyof typeof INDEXPRICES;
+    const leverage = (order.qty * INDEXPRICES[order.symbol as Indexprice].indexPrice) / order.margin;
+    if (leverage > INDEXPRICES[order.symbol as Indexprice].leverageThresold) {
+        order.status = "cancelled";
+        return order;
+    }
+
+    let position: Position = {
+        market: message.symbol as "SOL" | "ETH",
+        type: message.type === "buy" ? "LONG" : "SORT",
+        qty: Number(message.qty),
+        margin: Number(message.margin),
+        liquidationPrice: (leverage * order.margin) - order.margin,
+        pnL: 0,
+        averagePrice: null,
+    }
+
     if (!ORDERS.get(String(message.userId))) {
         ORDERS.set(String(message.userId), [order]);
     } else {
@@ -189,16 +208,16 @@ export function createOrder(message: Record<string, unknown>) {
         message.price = Number(message.price) as number;
         message.qty = Number(message.qty) as number;
 
-        // TODO: first match user balance with (message.price * message.qty) and freese first.
         if (message.side === "sell") {
             // if (!highestPrice) { throw new Error("Buy OrderBook is empty")};
             const userBalance = BALANCES.get(order.userId);
-            if (!userBalance || (userBalance![order.symbol]?.available! < order.qty)) {
+            if (!userBalance || (userBalance!["USDT"]?.available! < order.margin)) {
                 order.status = "cancelled";
                 return order;
             } else {
-                userBalance[order.symbol]!.available -= order.qty;
-                userBalance[order.symbol]!.locked += order.qty;
+                userBalance[order.symbol]!.available -= order.margin;
+                userBalance[order.symbol]!.locked += order.margin;
+                userBalance[order.symbol]!.leverageAmount += (leverage * order.margin) - order.margin;
             }
             while (Number(message.qty) > 0) {
                 let highestPrice = orderbookBuy.maxNode();
@@ -424,7 +443,6 @@ export function createOrder(message: Record<string, unknown>) {
             return order;
         }
 
-        // TODO: first match user balance with (message.price * message.qty) and freese first.
         if (message.side === "sell") {
             if (userBalance![order.symbol]!.available < order.qty) {
                 order.status = "cancelled";

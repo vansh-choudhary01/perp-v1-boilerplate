@@ -8,6 +8,7 @@ export type OrderStatus = "open" | "partially_filled" | "filled" | "cancelled";
 export interface Balance {
   available: number;
   locked: number;
+  leverageAmount: number;
 }
 
 export interface RestingOrder {
@@ -33,6 +34,7 @@ export interface OrderRecord {
   symbol: string;
   price: number | null;
   qty: number;
+  margin: number;
   filledQty: number;
   totalPrice: number;
   averagePrice: number | null;
@@ -69,6 +71,16 @@ export interface DepthResponse {
   symbol: string;
   bids: DepthLevel[];
   asks: DepthLevel[];
+}
+
+export interface Position {
+  market: "SOL" | "ETH",
+  type: "LONG" | "SORT",
+  qty: number,
+  margin: number,
+  liquidationPrice: number,
+  pnL: number,
+  averagePrice: number | null,
 }
 
 export type User = {
@@ -187,3 +199,7 @@ export const ORDERBOOKS: Orderbooks = {
 }
 export const ORDERS = new Map<string, OrderRecord[]>();
 export const FILLS: Fill[] = [];
+export const INDEXPRICES = {
+  SOL: { indexPrice: 0, leverageThresold: 100},
+  ETH: { indexPrice: 0, leverageThresold: 100},
+};
